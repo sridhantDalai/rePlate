@@ -23,6 +23,7 @@ app.use(cors({
   credentials: true
 }));
 
+
 app.use('/user',userRouter);
 app.use('/post',authMiddleware,postRouter);
 
