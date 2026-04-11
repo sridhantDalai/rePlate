@@ -3,6 +3,10 @@ import { motion } from "motion/react";
 import { Plus } from "lucide-react";
 import { FoodCard } from "./FoodCard";
 import { AddFoodModal } from "./AddFoodModal";
+import axios from 'axios'
+
+   
+
 
 // Mock data for food items
 const mockFoodItems = [
@@ -40,14 +44,14 @@ const mockFoodItems = [
     storageTemp: "2°C",
     sealed: true,
     acidic: true,
-    nutrition: {
-      calories: "350 kcal",
-      protein: "15g",
-      carbs: "45g",
-      fat: "12g",
-      fiber: "4g",
-      sugar: "6g",
-    },
+    // nutrition: {
+    //   calories: "350 kcal",
+    //   protein: "15g",
+    //   carbs: "45g",
+    //   fat: "12g",
+    //   fiber: "4g",
+    //   sugar: "6g",
+    // },
     uploader: {
       name: "Priya Sharma",
       phone: "+91 87654 32109",
@@ -150,18 +154,32 @@ const mockFoodItems = [
       location: "Mumbai, Maharashtra",
     },
   },
+  
+
 ];
 
 export function ProductShowcase() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [foodItems, setFoodItems] = useState(mockFoodItems);
 
-  const handleAddFood = (newItem: any) => {
+  const handleAddFood = async (newItem: any) => {
+    console.log(newItem);
+      try {
+    const res = await axios.post(
+      "http://localhost:8000/post/create",
+       newItem,
+        {withCredentials: true,}
+
+    );
     const newFoodItem = {
       id: foodItems.length + 1,
       ...newItem,
     };
     setFoodItems([newFoodItem, ...foodItems]);
+
+  } catch (error: any) {
+    alert(error);
+  }
     setIsModalOpen(false);
   };
 
@@ -217,4 +235,4 @@ export function ProductShowcase() {
       />
     </div>
   );
-}
+} 

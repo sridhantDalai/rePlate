@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
     postID: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Post'
+            ref: 'postFoodModel'
         }
     ]
 })
