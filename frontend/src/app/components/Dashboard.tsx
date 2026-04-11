@@ -1,6 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Calendar, Mail, MapPin, Phone, Shield, Trash2, UtensilsCrossed } from "lucide-react";
+import { Link } from "react-router";
+
+type ApiFoodPost = {
+  _id: string;
+  itemList: string;
+  imgFood: string;
+  expiryDate: string;
+  location: string;
+  isSealed: boolean;
+  name: string;
+  phone: string;
+  email: string;
+};
 
 type UserProfile = {
   name: string;
@@ -10,7 +23,7 @@ type UserProfile = {
 };
 
 type FoodPost = {
-  id: number;
+  id: string;
   name: string;
   image: string;
   expiryLabel: string;
@@ -19,40 +32,134 @@ type FoodPost = {
   sealed: boolean;
 };
 
-const mockUser: UserProfile = {
-  name: "Rajesh Kumar",
-  email: "rajesh@example.com",
-  mobile: "+91 98765 43210",
-  avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=faces",
+const defaultAvatarUrl = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=faces";
+
+const formatExpiryLabel = (expiryDate: string) => {
+  const date = new Date(expiryDate);
+
+  if (Number.isNaN(date.getTime())) {
+    return expiryDate || "Not available";
+  }
+
+  return date.toLocaleString("en-IN", {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 };
 
-const mockUserPosts: FoodPost[] = [
-  {
-    id: 1,
-    name: "Fresh Vegetable Curry",
-    image: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&h=400&fit=crop",
-    expiryLabel: "Today 8 pm",
-    location: "Patna, Bihar",
-    status: "Expiring Soon",
-    sealed: true,
-  },
-  {
-    id: 2,
-    name: "Fresh Bread Loaves",
-    image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&h=400&fit=crop",
-    expiryLabel: "Tomorrow 9 am",
-    location: "Patna, Bihar",
-    status: "Available",
-    sealed: false,
-  },
-];
+const getStatus = (expiryDate: string): FoodPost["status"] => {
+  const expiry = new Date(expiryDate);
+  const hoursLeft = (expiry.getTime() - Date.now()) / (1000 * 60 * 60);
+
+  return hoursLeft <= 24 ? "Expiring Soon" : "Available";
+};
+
+const mapApiFoodPost = (post: ApiFoodPost): FoodPost => ({
+  id: post._id,
+  name: post.itemList,
+  image: post.imgFood,
+  expiryLabel: formatExpiryLabel(post.expiryDate),
+  location: post.location,
+  status: getStatus(post.expiryDate),
+  sealed: post.isSealed,
+});
+
+const getProfileFromPosts = (email: string, posts: ApiFoodPost[]): UserProfile => {
+  const firstPost = posts[0];
+
+  return {
+    name: firstPost?.name || "Food donor",
+    email,
+    mobile: firstPost?.phone || "Not added yet",
+    avatarUrl: defaultAvatarUrl,
+  };
+};
 
 export function Dashboard() {
-  const [userPosts, setUserPosts] = useState<FoodPost[]>(mockUserPosts);
+  const savedEmail = localStorage.getItem("email")?.trim().toLowerCase() || "";
+  const isLoggedIn = Boolean(savedEmail);
+  const [userPosts, setUserPosts] = useState<FoodPost[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    name: "Food donor",
+    email: savedEmail || "Not logged in",
+    mobile: "Not added yet",
+    avatarUrl: defaultAvatarUrl,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const handleDeletePost = (postId: number) => {
+  useEffect(() => {
+    const loadUserPosts = async () => {
+      const email = localStorage.getItem("email")?.trim().toLowerCase();
+
+      if (!email) {
+        setUserPosts([]);
+        setIsLoading(false);
+        return;
+      }
+
+      localStorage.setItem("email", email);
+
+      try {
+        setIsLoading(true);
+        setError("");
+
+        const res = await fetch(`http://localhost:8000/postFood/email/${email}`);
+const data = await res.json();
+
+// 🔥 direct use
+setUserProfile(getProfileFromPosts(email, data.data || data));
+setUserPosts((data.data || data).map(mapApiFoodPost));
+
+        setUserProfile(getProfileFromPosts(email, data.data));
+        setUserPosts(data.data.map(mapApiFoodPost));
+      } catch (err: any) {
+        console.error("Dashboard food posts fetch failed:", err);
+        setUserPosts([]);
+        setError(err?.message || "Could not load your food posts.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUserPosts();
+  }, []);
+  
+ let [postid, setPostid] = useState("");
+ useEffect(() => {
+    const deletePost = async () => {
+      if (!postid) return;
+
+      try {
+        console.log("Deleting post with ID:", postid);
+        const res = await fetch(`http://localhost:8000/dashboard/del/${postid}`, {
+          method: "DELETE",
+        });
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "Could not delete the post.");
+        }
+      } catch (err) {
+        console.error("Delete post failed:", err);
+      } finally {
+        setPostid("");
+      }
+    };
+
+    deletePost();
+  }, [postid]);
+
+  const handleDeletePost = (postId: string) => {
+    console.log(postId);
+    setPostid(postId);
     setUserPosts((posts) => posts.filter((post) => post.id !== postId));
   };
+
+  const showNoPosts = !isLoading && !error && userPosts.length === 0;
 
   return (
     <div className="min-h-screen py-12 px-6">
@@ -90,84 +197,145 @@ export function Dashboard() {
           </div>
         </motion.div>
 
-        <div className="grid lg:grid-cols-[360px_1fr] gap-8 items-start">
-          <motion.aside
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1, duration: 0.6 }}
-            className="backdrop-blur-2xl bg-white/80 border border-white/60 rounded-3xl shadow-2xl p-8"
-          >
-            <div className="flex flex-col items-center text-center">
-              <div className="relative">
-                <img
-                  src={mockUser.avatarUrl}
-                  alt={mockUser.name}
-                  className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-2xl"
-                />
-                <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 border-4 border-white flex items-center justify-center shadow-lg">
-                  <Shield className="w-5 h-5 text-white" strokeWidth={2.5} />
+        {!isLoggedIn ? (
+          <DashboardAuthPrompt />
+        ) : (
+          <div className="grid lg:grid-cols-[360px_1fr] gap-8 items-start">
+            <motion.aside
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1, duration: 0.6 }}
+              className="backdrop-blur-2xl bg-white/80 border border-white/60 rounded-3xl shadow-2xl p-8"
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="relative">
+                  <img
+                    src={userProfile.avatarUrl}
+                    alt={userProfile.name}
+                    className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-2xl"
+                  />
+                  <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 border-4 border-white flex items-center justify-center shadow-lg">
+                    <Shield className="w-5 h-5 text-white" strokeWidth={2.5} />
+                  </div>
+                </div>
+
+                <h2 className="font-black text-gray-900 mt-6" style={{ fontSize: "2rem", lineHeight: 1.1 }}>
+                  {userProfile.name}
+                </h2>
+                <p className="text-gray-600 mt-2 font-semibold" style={{ fontSize: "0.875rem" }}>
+                  Food donor
+                </p>
+              </div>
+
+              <div className="mt-8 space-y-4">
+                <ProfileRow icon={Mail} label="Email" value={userProfile.email} />
+                <ProfileRow icon={Phone} label="Mobile" value={userProfile.mobile} />
+              </div>
+            </motion.aside>
+
+            <section className="space-y-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="font-black text-gray-900" style={{ fontSize: "2rem" }}>
+                    Your Food Posts
+                  </h2>
+                  <p className="text-gray-600 font-semibold" style={{ fontSize: "0.875rem" }}>
+                    Food you have shared from Add Food.
+                  </p>
                 </div>
               </div>
 
-              <h2 className="font-black text-gray-900 mt-6" style={{ fontSize: "2rem", lineHeight: 1.1 }}>
-                {mockUser.name}
-              </h2>
-              <p className="text-gray-600 mt-2 font-semibold" style={{ fontSize: "0.875rem" }}>
-                Food donor
-              </p>
-            </div>
+              {isLoading && (
+                <DashboardMessage title="Loading your food posts..." body="Fetching posts shared from your email." />
+              )}
 
-            <div className="mt-8 space-y-4">
-              <ProfileRow icon={Mail} label="Email" value={mockUser.email} />
-              <ProfileRow icon={Phone} label="Mobile" value={mockUser.mobile} />
-            </div>
-          </motion.aside>
+              {error && (
+                <DashboardMessage title="Could not load posts" body={error} tone="error" />
+              )}
 
-          <section className="space-y-5">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h2 className="font-black text-gray-900" style={{ fontSize: "2rem" }}>
-                  Your Food Posts
-                </h2>
-                <p className="text-gray-600 font-semibold" style={{ fontSize: "0.875rem" }}>
-                  Food you have shared from Add Food.
-                </p>
-              </div>
-            </div>
+              {showNoPosts && (
+                <DashboardMessage title="No food posts yet" body="Your shared food will appear here." />
+              )}
 
-            <AnimatePresence mode="popLayout">
-              {userPosts.length > 0 ? (
-                userPosts.map((post, index) => (
+              <AnimatePresence mode="popLayout">
+                {userPosts.map((post, index) => (
                   <FoodPostRow
                     key={post.id}
                     post={post}
                     delay={index * 0.08}
                     onDelete={() => handleDeletePost(post.id)}
                   />
-                ))
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  className="backdrop-blur-xl bg-white/70 border border-white/60 rounded-3xl p-10 text-center shadow-xl"
-                >
-                  <div className="mx-auto w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-5">
-                    <UtensilsCrossed className="w-8 h-8 text-emerald-600" strokeWidth={2.5} />
-                  </div>
-                  <h3 className="font-black text-gray-900 mb-2" style={{ fontSize: "1.5rem" }}>
-                    No food posts yet
-                  </h3>
-                  <p className="text-gray-600 font-semibold">
-                    Your shared food will appear here.
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </section>
-        </div>
+                ))}
+              </AnimatePresence>
+            </section>
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function DashboardAuthPrompt() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="backdrop-blur-2xl bg-white/80 border border-white/60 rounded-3xl p-10 md:p-12 text-center shadow-2xl"
+    >
+      <div className="mx-auto h-[4.5rem] w-[4.5rem] rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+        <UtensilsCrossed className="w-8 h-8 text-white" strokeWidth={2.5} />
+      </div>
+      <h2 className="mt-6 font-black text-gray-900" style={{ fontSize: "clamp(1.75rem, 4vw, 2.5rem)" }}>
+        To see your post you have to login / signin
+      </h2>
+      <p className="mt-3 text-gray-600 font-semibold" style={{ fontSize: "1rem" }}>
+        Sign in to view and manage the food you have shared.
+      </p>
+      <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
+        <Link to="/login">
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            className="w-full sm:w-auto px-6 py-3 rounded-xl font-black bg-white/70 border border-white/80 hover:bg-white text-gray-900 shadow-sm"
+          >
+            Login
+          </motion.button>
+        </Link>
+        <Link to="/signup">
+          <motion.button
+            whileHover={{ scale: 1.04, boxShadow: "0 12px 30px rgba(16, 185, 129, 0.24)" }}
+            whileTap={{ scale: 0.96 }}
+            className="w-full sm:w-auto px-6 py-3 rounded-xl font-black bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30"
+          >
+            Sign Up
+          </motion.button>
+        </Link>
+      </div>
+    </motion.div>
+  );
+}
+
+function DashboardMessage({ title, body, tone = "default" }: { title: string; body: string; tone?: "default" | "error" }) {
+  const iconClass = tone === "error" ? "bg-red-50 border-red-100" : "bg-emerald-50 border-emerald-100";
+  const iconColor = tone === "error" ? "text-red-600" : "text-emerald-600";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      className="backdrop-blur-xl bg-white/70 border border-white/60 rounded-3xl p-10 text-center shadow-xl"
+    >
+      <div className={`mx-auto w-16 h-16 rounded-2xl border flex items-center justify-center mb-5 ${iconClass}`}>
+        <UtensilsCrossed className={`w-8 h-8 ${iconColor}`} strokeWidth={2.5} />
+      </div>
+      <h3 className="font-black text-gray-900 mb-2" style={{ fontSize: "1.5rem" }}>
+        {title}
+      </h3>
+      <p className="text-gray-600 font-semibold">
+        {body}
+      </p>
+    </motion.div>
   );
 }
 

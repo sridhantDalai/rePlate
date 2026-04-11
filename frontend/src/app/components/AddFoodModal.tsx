@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Upload, Calendar, Thermometer, Shield, Droplet, MapPin, User, Phone, Mail } from "lucide-react";
+import { NAVBAR_LOCATIONS } from "../constants/locations";
 
 interface AddFoodModalProps {
   isOpen: boolean;
@@ -391,14 +392,23 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
                     </label>
                     <motion.div whileFocus={{ scale: 1.01 }} className="relative">
                       <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="text"
+                      <select
                         required
                         value={formData.location}
                         onChange={(e) => handleChange("location", e.target.value)}
-                        placeholder="e.g., Patna, Bihar"
-                        className="w-full pl-12 pr-4 py-3 rounded-xl backdrop-blur-md bg-white/60 border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-semibold"
-                      />
+                        className={`w-full appearance-none pl-12 pr-4 py-3 rounded-xl backdrop-blur-md border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-semibold ${
+                          formData.location ? "bg-white/60 text-gray-900" : "bg-white/60 text-gray-400"
+                        }`}
+                      >
+                        <option value="" disabled>
+                          Select your location
+                        </option>
+                        {NAVBAR_LOCATIONS.map((location) => (
+                          <option key={location} value={location}>
+                            {location}
+                          </option>
+                        ))}
+                      </select>
                     </motion.div>
                   </div>
                 </div>

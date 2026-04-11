@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { Plus } from "lucide-react";
+import { useSearchParams } from "react-router";
 import { FoodCard } from "./FoodCard";
 import { AddFoodModal } from "./AddFoodModal";
 
@@ -57,6 +58,7 @@ const mapApiFoodPost = (post: ApiFoodPost): FoodItem => ({
 });
 
 export function ProductShowcase() {
+  const [searchParams] = useSearchParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [foodItems, setFoodItems] = useState<FoodItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -91,6 +93,20 @@ export function ProductShowcase() {
   const handleAddFood = (newItem: FoodItem) => {
     setFoodItems((items) => [newItem, ...items]);
   };
+
+  const selectedLocation = searchParams.get("location")?.trim() || "All";
+
+  const filteredFoodItems = useMemo(() => {
+    const normalizedSelectedLocation = selectedLocation.trim().toLowerCase();
+
+    if (normalizedSelectedLocation === "all") {
+      return foodItems;
+    }
+
+    return foodItems.filter(
+      (item) => item.uploader.location.trim().toLowerCase() === normalizedSelectedLocation
+    );
+  }, [foodItems, selectedLocation]);
 
   return (
     <div className="min-h-screen py-12">
@@ -147,6 +163,12 @@ export function ProductShowcase() {
               No food posts yet.
             </p>
           </div>
+        ) : filteredFoodItems.length === 0 ? (
+          <div className="rounded-2xl border border-emerald-100 bg-white/70 p-10 text-center shadow-lg">
+            <p className="font-black text-gray-900" style={{ fontSize: "1.25rem" }}>
+              No food posts found for this location.
+            </p>
+          </div>
         ) : (
           <motion.div
             initial={{ opacity: 0 }}
@@ -154,7 +176,7 @@ export function ProductShowcase() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            {foodItems.map((item, index) => (
+            {filteredFoodItems.map((item, index) => (
               <FoodCard key={item.id} item={item} delay={index * 0.1} />
             ))}
           </motion.div>

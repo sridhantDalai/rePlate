@@ -1,17 +1,44 @@
-import { Outlet, Link, useLocation } from "react-router";
+import { Outlet, Link, useLocation, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { UtensilsCrossed, MapPin, Search, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { NAVBAR_LOCATIONS } from "../constants/locations";
 
-const cities = ["Mumbai, Maharashtra", "Delhi, NCR", "Bangalore, Karnataka", "Patna, Bihar"];
+const cities = ["All", ...NAVBAR_LOCATIONS];
 
 export function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchLocation, setSearchLocation] = useState("");
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const savedEmail =
+    typeof window !== "undefined" ? localStorage.getItem("email")?.trim() : "";
+  const isLoggedIn = Boolean(savedEmail);
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
+  const handleLogout = () => {
+    localStorage.removeItem("email");
+    closeMobileMenu();
+    navigate("/login");
+  };
+
+  useEffect(() => {
+    const locationFilter = new URLSearchParams(location.search).get("location")?.trim();
+    setSearchLocation(locationFilter || "All");
+  }, [location.search]);
+
+  const applyLocationFilter = (selectedCity: string) => {
+    setSearchLocation(selectedCity);
+    setShowCityDropdown(false);
+
+    if (selectedCity === "All") {
+      navigate("/products");
+      return;
+    }
+
+    navigate(`/products?location=${encodeURIComponent(selectedCity)}`);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-orange-50">
@@ -87,10 +114,7 @@ export function Layout() {
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.05 }}
                           whileHover={{ backgroundColor: "rgba(16, 185, 129, 0.1)" }}
-                          onClick={() => {
-                            setSearchLocation(city);
-                            setShowCityDropdown(false);
-                          }}
+                          onClick={() => applyLocationFilter(city)}
                           className="w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-emerald-50/50 transition-colors"
                         >
                           <MapPin className="w-4 h-4 text-emerald-600" strokeWidth={2.5} />
@@ -120,24 +144,37 @@ export function Layout() {
                 Dashboard
               </NavLink>
               <div className="flex items-center gap-3 ml-4">
-                <Link to="/login">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-4 py-2 rounded-xl font-bold backdrop-blur-sm bg-white/50 border border-white/60 hover:bg-white/80 transition-colors shadow-sm"
-                  >
-                    Login
-                  </motion.button>
-                </Link>
-                <Link to="/signup">
+                {isLoggedIn ? (
                   <motion.button
                     whileHover={{ scale: 1.05, boxShadow: "0 8px 30px rgba(16, 185, 129, 0.3)" }}
                     whileTap={{ scale: 0.95 }}
+                    onClick={handleLogout}
                     className="px-5 py-2 rounded-xl font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 transition-shadow"
                   >
-                    Sign Up
+                    Logout
                   </motion.button>
-                </Link>
+                ) : (
+                  <>
+                    <Link to="/login">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="px-4 py-2 rounded-xl font-bold backdrop-blur-sm bg-white/50 border border-white/60 hover:bg-white/80 transition-colors shadow-sm"
+                      >
+                        Login
+                      </motion.button>
+                    </Link>
+                    <Link to="/signup">
+                      <motion.button
+                        whileHover={{ scale: 1.05, boxShadow: "0 8px 30px rgba(16, 185, 129, 0.3)" }}
+                        whileTap={{ scale: 0.95 }}
+                        className="px-5 py-2 rounded-xl font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 transition-shadow"
+                      >
+                        Sign Up
+                      </motion.button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
 
@@ -172,6 +209,16 @@ export function Layout() {
                     type="text"
                     value={searchLocation}
                     onChange={(e) => setSearchLocation(e.target.value)}
+                    onBlur={() => {
+                      const typedLocation = searchLocation.trim();
+
+                      if (!typedLocation || typedLocation.toLowerCase() === "all") {
+                        applyLocationFilter("All");
+                        return;
+                      }
+
+                      applyLocationFilter(typedLocation);
+                    }}
                     placeholder="Search location or city..."
                     className="w-full pl-12 pr-12 py-3 rounded-lg bg-white border border-emerald-100 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-semibold placeholder:text-gray-400"
                     style={{ fontSize: '0.875rem' }}
@@ -194,16 +241,28 @@ export function Layout() {
                 </div>
 
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Link to="/login" onClick={closeMobileMenu}>
-                    <button className="w-full px-4 py-3 rounded-lg font-bold bg-white border border-emerald-100 hover:bg-emerald-50 transition-colors shadow-sm">
-                      Login
+                  {isLoggedIn ? (
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="sm:col-span-2 w-full px-4 py-3 rounded-lg font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30"
+                    >
+                      Logout
                     </button>
-                  </Link>
-                  <Link to="/signup" onClick={closeMobileMenu}>
-                    <button className="w-full px-4 py-3 rounded-lg font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30">
-                      Sign Up
-                    </button>
-                  </Link>
+                  ) : (
+                    <>
+                      <Link to="/login" onClick={closeMobileMenu}>
+                        <button className="w-full px-4 py-3 rounded-lg font-bold bg-white border border-emerald-100 hover:bg-emerald-50 transition-colors shadow-sm">
+                          Login
+                        </button>
+                      </Link>
+                      <Link to="/signup" onClick={closeMobileMenu}>
+                        <button className="w-full px-4 py-3 rounded-lg font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30">
+                          Sign Up
+                        </button>
+                      </Link>
+                    </>
+                  )}
                 </div>
               </motion.div>
             )}

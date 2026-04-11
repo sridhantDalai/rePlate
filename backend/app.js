@@ -6,6 +6,7 @@ require("dotenv").config();
 const userRouter=require('./routes/user.route.js');
 const postRouter=require('./routes/post.route.js');
 const postFoodRouter = require('./routes/postFood.route.js');
+const dashboardRouter = require('./routes/dashbaord.route.js');
 
 const authMiddleware = require('./middleware/auth.middleware.js');
 
@@ -27,10 +28,11 @@ connectDB();
 //cors
 
 
-
+//router 
 app.use('/user',userRouter);
 app.use('/post',authMiddleware,postRouter);
 app.use('/postFood',postFoodRouter);
+app.use('/dashboard',dashboardRouter);
 
 app.listen(process.env.PORT, () => {
   console.log(`Server is running http://localhost:${process.env.PORT}`);

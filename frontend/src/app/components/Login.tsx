@@ -10,30 +10,46 @@ export function Login() {
   const [password, setPassword] = useState("");
 
     
-  const loginUser = async () => {
-  try {
-    const res = await axios.post(
-      "http://localhost:8000/user/login",
-      {
-        email,
-        password
-      },
-      {
+  const fetchDashboardData = async () => {
+    try {
+      const res = await axios.get("http://localhost:8000/dashboard/render", {
         withCredentials: true,
+      });
+      const dashboardEmail = res.data?.email?.trim().toLowerCase();
+      if (dashboardEmail) {
+        localStorage.setItem("email", dashboardEmail);
       }
-    );
+    } catch (error) {
+      console.error("Dashboard render fetch failed:", error);
+    }
+  };
 
-    alert(res.data.message);
-    return true;
-  } catch (error: any) {
-    alert(
-      error?.response?.data?.message ||
-      error?.message ||
-      "Login failed"
-    );
-    return false;
-  }
-};
+  const loginUser = async () => {
+    try {
+      const res = await axios.post(
+        "http://localhost:8000/user/login",
+        {
+          email: email.trim().toLowerCase(),
+          password
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      alert(res.data.message);
+      localStorage.setItem("email", email.trim().toLowerCase());
+      await fetchDashboardData();
+      return true;
+    } catch (error: any) {
+      alert(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Login failed"
+      );
+      return false;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
