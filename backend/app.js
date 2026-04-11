@@ -5,6 +5,7 @@ require("dotenv").config();
 
 const userRouter=require('./routes/user.route.js');
 const postRouter=require('./routes/post.route.js');
+const postFoodRouter = require('./routes/postFood.route.js');
 
 const authMiddleware = require('./middleware/auth.middleware.js');
 
@@ -28,7 +29,8 @@ connectDB();
 
 
 app.use('/user',userRouter);
-app.use('/post',postRouter);
+app.use('/post',authMiddleware,postRouter);
+app.use('/postFood',postFoodRouter);
 
 app.listen(process.env.PORT, () => {
   console.log(`Server is running http://localhost:${process.env.PORT}`);

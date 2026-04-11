@@ -116,6 +116,9 @@ export function Layout() {
               <NavLink to="/products" active={location.pathname === "/products"}>
                 Browse Food
               </NavLink>
+              <NavLink to="/dashbaord" active={location.pathname === "/dashbaord"}>
+                Dashboard
+              </NavLink>
               <div className="flex items-center gap-3 ml-4">
                 <Link to="/login">
                   <motion.button
@@ -184,6 +187,9 @@ export function Layout() {
                   </MobileNavLink>
                   <MobileNavLink to="/products" active={location.pathname === "/products"} onClick={closeMobileMenu}>
                     Browse Food
+                  </MobileNavLink>
+                  <MobileNavLink to="/dashbaord" active={location.pathname === "/dashbaord"} onClick={closeMobileMenu}>
+                    Dashboard
                   </MobileNavLink>
                 </div>
 

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 import axios from 'axios'
 
 export function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -23,20 +24,26 @@ export function Login() {
     );
 
     alert(res.data.message);
+    return true;
   } catch (error: any) {
     alert(
       error?.response?.data?.message ||
       error?.message ||
       "Login failed"
     );
+    return false;
   }
 };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    loginUser();
-    setEmail('');
-    setPassword('');
+    const loginSuccessful = await loginUser();
+
+    if (loginSuccessful) {
+      setEmail('');
+      setPassword('');
+      navigate("/products");
+    }
   };
 
   return (

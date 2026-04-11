@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { useLocation, useNavigate } from "react-router";
-import { ArrowLeft, Calendar, Thermometer, Shield, Droplet, Clock, User, Phone, MapPin } from "lucide-react";
+import { ArrowLeft, Calendar, Thermometer, Shield, Droplet, Clock, User, Phone, MapPin, Mail } from "lucide-react";
 
 export function FoodDetails() {
   const location = useLocation();
@@ -178,6 +178,11 @@ export function FoodDetails() {
                   icon={Phone}
                   label="Phone"
                   value={item.uploader.phone}
+                />
+                <ContactItem
+                  icon={Mail}
+                  label="Email"
+                  value={item.uploader.email}
                 />
                 <ContactItem
                   icon={MapPin}

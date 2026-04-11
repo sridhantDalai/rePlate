@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, User, Phone, MapPin, Calendar, Thermometer, Shield, Droplet, Clock } from "lucide-react";
+import { X, User, Phone, MapPin, Calendar, Thermometer, Shield, Droplet, Clock, Mail } from "lucide-react";
 
 interface FoodDetailsModalProps {
   isOpen: boolean;
@@ -18,6 +18,7 @@ interface FoodDetailsModalProps {
     uploader: {
       name: string;
       phone: string;
+      email: string;
       location: string;
     };
   };
@@ -196,6 +197,11 @@ export function FoodDetailsModal({ isOpen, onClose, item }: FoodDetailsModalProp
                           icon={Phone}
                           label="Phone"
                           value={item.uploader.phone}
+                        />
+                        <ContactItem
+                          icon={Mail}
+                          label="Email"
+                          value={item.uploader.email}
                         />
                         <ContactItem
                           icon={MapPin}

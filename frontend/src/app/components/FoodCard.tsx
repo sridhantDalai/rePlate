@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { Clock, Calendar, ShoppingBag, Thermometer, Shield, Droplet } from "lucide-react";
 
 interface FoodItem {
-  id: number;
+  id: string | number;
   name: string;
   image: string;
   price: string;
@@ -17,6 +17,7 @@ interface FoodItem {
   uploader: {
     name: string;
     phone: string;
+    email: string;
     location: string;
   };
 }

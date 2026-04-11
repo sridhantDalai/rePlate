@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Upload, Calendar, Thermometer, Shield, Droplet, MapPin, User, Phone } from "lucide-react";
+import { X, Upload, Calendar, Thermometer, Shield, Droplet, MapPin, User, Phone, Mail } from "lucide-react";
 
 interface AddFoodModalProps {
   isOpen: boolean;
@@ -8,22 +8,25 @@ interface AddFoodModalProps {
   onSubmit: (data: any) => void;
 }
 
-export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
-  const [formData, setFormData] = useState({
-    name: "",
-    image: "",
-    manufactureDate: "",
-    expiryDate: "",
-    expiryLabel: "",
-    storageTemp: "",
-    sealed: false,
-    acidic: false,
-    uploaderName: "",
-    uploaderPhone: "",
-    location: "",
-  });
+const emptyFormData = {
+  name: "",
+  image: null as File | null,
+  manufactureDate: "",
+  expiryDate: "",
+  expiryLabel: "",
+  storageTemp: "",
+  sealed: false,
+  acidic: false,
+  uploaderName: "",
+  uploaderPhone: "",
+  uploaderEmail: "",
+  location: "",
+};
 
+export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
+  const [formData, setFormData] = useState(emptyFormData);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const getTimeLeft = async (data: typeof formData) => {
     try {
@@ -37,7 +40,7 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
         Sealed container: ${data.sealed ? "yes" : "no"}
         Acidic food: ${data.acidic ? "yes" : "no"}
         Donor location: ${data.location}
-        
+
         Task: Calculate a conservative safe expiry date and time for this food.
         Use all details above. If safety is uncertain, choose the earlier safer time.
         Return ONLY valid JSON, no markdown:
@@ -51,7 +54,7 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${import.meta.env.VITE_GEMINI_KEY}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
       });
 
       const result = await res.json();
@@ -62,7 +65,7 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
       const expiryLabel = parsed.expiryLabel;
 
       if (expiryDateTime && expiryLabel) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           expiryDate: expiryDateTime,
           expiryLabel,
@@ -80,64 +83,74 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!formData.image) {
+      alert("Please select a food image.");
+      return;
+    }
+
     const expiry = formData.expiryDate
       ? { expiryDate: formData.expiryDate, expiryLabel: formData.expiryLabel }
       : await getTimeLeft(formData);
 
-    if (!expiry) {
-      return;
+    if (!expiry) return;
+
+    try {
+      setIsSubmitting(true);
+
+      const fd = new FormData();
+      fd.append("itemList", formData.name);
+      fd.append("dateOfPrep", formData.manufactureDate);
+      fd.append("expiryDate", expiry.expiryDate);
+      fd.append("storageTemp", formData.storageTemp);
+      fd.append("name", formData.uploaderName);
+      fd.append("phone", formData.uploaderPhone);
+      fd.append("email", formData.uploaderEmail);
+      fd.append("location", formData.location);
+      fd.append("isSealed", String(formData.sealed));
+      fd.append("isAcidic", String(formData.acidic));
+      fd.append("imgFood", formData.image);
+
+      const res = await fetch("http://localhost:8000/postFood/res", {
+        method: "POST",
+        body: fd,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        alert(data.message || "Failed to add food.");
+        return;
+      }
+
+      const savedFood = data.data;
+      onSubmit({
+        id: savedFood._id,
+        name: savedFood.itemList,
+        image: savedFood.imgFood,
+        manufactureDate: savedFood.dateOfPrep,
+        expiryDate: savedFood.expiryDate,
+        expiryLabel: expiry.expiryLabel,
+        storageTemp: savedFood.storageTemp,
+        sealed: savedFood.isSealed,
+        acidic: savedFood.isAcidic,
+        price: savedFood.price || "Free",
+        uploader: {
+          name: savedFood.name,
+          phone: savedFood.phone,
+          email: savedFood.email,
+          location: savedFood.location,
+        },
+      });
+
+      alert("Food Added Successfully");
+      setFormData(emptyFormData);
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert("Error uploading food.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const finalData = {
-    ...formData,
-    expiryDate: expiry.expiryDate,
-    expiryLabel: expiry.expiryLabel,
-    price: "Free",
-    uploader: {
-      iteamDetails: formData.name,
-      location: formData.location,
-      isSealed: formData.sealed,
-      isAcidic: formData.acidic,
-      temp : formData.storageTemp,
-      madeAt : formData.manufactureDate,
-      expiresAt : expiry.expiryDate,
-    },
-  };
-
-  console.log("Final Data being sent:", finalData);
-
-    onSubmit({
-      name: formData.name,
-      image: formData.image,
-      manufactureDate: formData.manufactureDate,
-      expiryDate: expiry.expiryDate,
-      expiryLabel: expiry.expiryLabel,
-      storageTemp: formData.storageTemp,
-      sealed: formData.sealed,
-      acidic: formData.acidic,
-      price: "Free",
-      uploader: {
-        name: formData.uploaderName,
-        phone: formData.uploaderPhone,
-        location: formData.location,
-      },
-    });
-
-    onClose();
-    // Reset form
-    setFormData({
-      name: "",
-      image: "",
-      manufactureDate: "",
-      expiryDate: "",
-      expiryLabel: "",
-      storageTemp: "",
-      sealed: false,
-      acidic: false,
-      uploaderName: "",
-      uploaderPhone: "",
-      location: "",
-    });
   };
 
   const handleChange = (field: string, value: any) => {
@@ -163,7 +176,6 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -172,7 +184,6 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
           />
 
-          {/* Modal */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -181,13 +192,12 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
               transition={{ type: "spring", duration: 0.5 }}
               className="w-full max-w-2xl max-h-[90vh] overflow-y-auto backdrop-blur-2xl bg-white/95 border border-white/60 rounded-3xl shadow-2xl"
             >
-              {/* Header */}
               <div className="sticky top-0 backdrop-blur-xl bg-white/90 border-b border-gray-200 px-8 py-6 flex items-center justify-between">
                 <div>
-                  <h2 className="font-black text-gray-900" style={{ fontSize: '2rem' }}>
+                  <h2 className="font-black text-gray-900" style={{ fontSize: "2rem" }}>
                     Add Food Item
                   </h2>
-                  <p className="text-gray-600" style={{ fontSize: '0.875rem' }}>
+                  <p className="text-gray-600" style={{ fontSize: "0.875rem" }}>
                     Share your surplus food with the community
                   </p>
                 </div>
@@ -201,12 +211,10 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
                 </motion.button>
               </div>
 
-              {/* Form */}
               <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                {/* Item Name */}
                 <div>
-                  <label className="block font-black text-gray-900 mb-2" style={{ fontSize: '0.875rem' }}>
-                    Item Name
+                  <label className="block font-black text-gray-900 mb-2" style={{ fontSize: "0.875rem" }}>
+                    Item List
                   </label>
                   <motion.input
                     whileFocus={{ scale: 1.01 }}
@@ -214,14 +222,13 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
                     required
                     value={formData.name}
                     onChange={(e) => handleChange("name", e.target.value)}
-                    placeholder="e.g., Fresh Vegetable Curry"
+                    placeholder="e.g., Roti 32, sabzi 30 bowls, rice 20 kg"
                     className="w-full px-4 py-3 rounded-xl backdrop-blur-md bg-white/60 border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-semibold"
                   />
                 </div>
 
-                {/* Upload Image */}
                 <div>
-                  <label className="block font-black text-gray-900 mb-2" style={{ fontSize: '0.875rem' }}>
+                  <label className="block font-black text-gray-900 mb-2" style={{ fontSize: "0.875rem" }}>
                     Upload Image
                   </label>
                   <motion.div whileHover={{ scale: 1.01 }} className="relative">
@@ -231,11 +238,7 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            handleChange("image", reader.result as string);
-                          };
-                          reader.readAsDataURL(file);
+                          handleChange("image", file);
                         }
                       }}
                       className="hidden"
@@ -247,7 +250,7 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
                     >
                       <Upload className="w-5 h-5 text-gray-400 group-hover:text-emerald-600 transition-colors" />
                       <span className="font-semibold text-gray-600 group-hover:text-emerald-600 transition-colors">
-                        {formData.image ? "Image Selected ✓" : "Click to upload image"}
+                        {formData.image ? "Image Selected" : "Click to upload image"}
                       </span>
                     </label>
                   </motion.div>
@@ -258,7 +261,7 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
                       className="mt-3 rounded-xl overflow-hidden border border-gray-200"
                     >
                       <img
-                        src={formData.image}
+                        src={URL.createObjectURL(formData.image)}
                         alt="Preview"
                         className="w-full h-32 object-cover"
                       />
@@ -266,10 +269,9 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
                   )}
                 </div>
 
-                {/* Dates */}
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block font-black text-gray-900 mb-2" style={{ fontSize: '0.875rem' }}>
+                    <label className="block font-black text-gray-900 mb-2" style={{ fontSize: "0.875rem" }}>
                       Date of Preparation
                     </label>
                     <motion.div whileFocus={{ scale: 1.01 }} className="relative">
@@ -284,34 +286,31 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
                     </motion.div>
                   </div>
 
-                    {/* Expiry Date */}
-                    <div>
-                      <label className="block font-black text-gray-900 mb-2" style={{ fontSize: '0.875rem' }}>
-                        Expiry Date {isLoading && " (Determining...)"}
-                      </label>
-                      <motion.div whileFocus={{ scale: 1.01 }} className="relative">
-                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                              type="text"
-                              disabled={true}
-                              placeholder="Filled after you submit the complete form"
-                              value={formData.expiryLabel || ""} 
-                              className={`w-full pl-12 pr-4 py-3 rounded-xl backdrop-blur-md border border-gray-200 outline-none transition-all font-semibold ${
-                                isLoading ? "bg-emerald-50 animate-pulse" : "bg-gray-100 cursor-not-allowed"
-                              }`}
-                            />
-                      </motion.div>
-                      
-                      <p className="mt-2 text-xs font-bold text-emerald-700">
-                        Gemini will determine this after the full form is filled.
-                      </p>
-                    </div>
+                  <div>
+                    <label className="block font-black text-gray-900 mb-2" style={{ fontSize: "0.875rem" }}>
+                      Expiry Date {isLoading && " (Determining...)"}
+                    </label>
+                    <motion.div whileFocus={{ scale: 1.01 }} className="relative">
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        disabled={true}
+                        placeholder="Filled after you submit the complete form"
+                        value={formData.expiryLabel || ""}
+                        className={`w-full pl-12 pr-4 py-3 rounded-xl backdrop-blur-md border border-gray-200 outline-none transition-all font-semibold ${
+                          isLoading ? "bg-emerald-50 animate-pulse" : "bg-gray-100 cursor-not-allowed"
+                        }`}
+                      />
+                    </motion.div>
 
+                    <p className="mt-2 text-xs font-bold text-emerald-700">
+                      Gemini will determine this after the full form is filled.
+                    </p>
+                  </div>
                 </div>
 
-                {/* Storage Temperature */}
                 <div>
-                  <label className="block font-black text-gray-900 mb-2" style={{ fontSize: '0.875rem' }}>
+                  <label className="block font-black text-gray-900 mb-2" style={{ fontSize: "0.875rem" }}>
                     Storage Temperature
                   </label>
                   <motion.div whileFocus={{ scale: 1.01 }} className="relative">
@@ -321,23 +320,21 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
                       required
                       value={formData.storageTemp}
                       onChange={(e) => handleChange("storageTemp", e.target.value)}
-                      placeholder="e.g., 4°C or Room Temp"
+                      placeholder="e.g., 4C or Room Temp"
                       className="w-full pl-12 pr-4 py-3 rounded-xl backdrop-blur-md bg-white/60 border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-semibold"
                     />
                   </motion.div>
                 </div>
 
-                {/* Divider */}
                 <div className="border-t border-gray-200 pt-6">
-                  <h3 className="font-black text-gray-900 mb-4 flex items-center gap-2" style={{ fontSize: '1.125rem' }}>
+                  <h3 className="font-black text-gray-900 mb-4 flex items-center gap-2" style={{ fontSize: "1.125rem" }}>
                     <User className="w-5 h-5 text-emerald-600" />
                     Your Contact Information
                   </h3>
                 </div>
 
-                {/* Uploader Name */}
                 <div>
-                  <label className="block font-black text-gray-900 mb-2" style={{ fontSize: '0.875rem' }}>
+                  <label className="block font-black text-gray-900 mb-2" style={{ fontSize: "0.875rem" }}>
                     Your Name
                   </label>
                   <motion.div whileFocus={{ scale: 1.01 }} className="relative">
@@ -353,10 +350,26 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
                   </motion.div>
                 </div>
 
-                {/* Uploader Phone and Location */}
+                <div>
+                  <label className="block font-black text-gray-900 mb-2" style={{ fontSize: "0.875rem" }}>
+                    Email
+                  </label>
+                  <motion.div whileFocus={{ scale: 1.01 }} className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="email"
+                      required
+                      value={formData.uploaderEmail}
+                      onChange={(e) => handleChange("uploaderEmail", e.target.value)}
+                      placeholder="dummy@example.com"
+                      className="w-full pl-12 pr-4 py-3 rounded-xl backdrop-blur-md bg-white/60 border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-semibold"
+                    />
+                  </motion.div>
+                </div>
+
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block font-black text-gray-900 mb-2" style={{ fontSize: '0.875rem' }}>
+                    <label className="block font-black text-gray-900 mb-2" style={{ fontSize: "0.875rem" }}>
                       Phone Number
                     </label>
                     <motion.div whileFocus={{ scale: 1.01 }} className="relative">
@@ -373,7 +386,7 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
                   </div>
 
                   <div>
-                    <label className="block font-black text-gray-900 mb-2" style={{ fontSize: '0.875rem' }}>
+                    <label className="block font-black text-gray-900 mb-2" style={{ fontSize: "0.875rem" }}>
                       Location
                     </label>
                     <motion.div whileFocus={{ scale: 1.01 }} className="relative">
@@ -390,12 +403,8 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
                   </div>
                 </div>
 
-                {/* Checkboxes */}
                 <div className="space-y-4">
-                  <motion.label
-                    whileHover={{ x: 4 }}
-                    className="flex items-center gap-3 cursor-pointer group"
-                  >
+                  <motion.label whileHover={{ x: 4 }} className="flex items-center gap-3 cursor-pointer group">
                     <div className="relative">
                       <input
                         type="checkbox"
@@ -411,10 +420,7 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
                     </div>
                   </motion.label>
 
-                  <motion.label
-                    whileHover={{ x: 4 }}
-                    className="flex items-center gap-3 cursor-pointer group"
-                  >
+                  <motion.label whileHover={{ x: 4 }} className="flex items-center gap-3 cursor-pointer group">
                     <div className="relative">
                       <input
                         type="checkbox"
@@ -431,7 +437,6 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
                   </motion.label>
                 </div>
 
-                {/* Submit Button */}
                 <motion.button
                   whileHover={{
                     scale: 1.02,
@@ -439,11 +444,11 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
                   }}
                   whileTap={{ scale: 0.98 }}
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || isSubmitting}
                   className="w-full py-4 rounded-2xl font-black bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-xl shadow-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-70"
-                  style={{ fontSize: '1.125rem' }}
+                  style={{ fontSize: "1.125rem" }}
                 >
-                  {isLoading ? "Determining expiry with Gemini..." : "Add Food Item"}
+                  {isLoading ? "Determining expiry with Gemini..." : isSubmitting ? "Uploading image and posting food..." : "Add Food Item"}
                 </motion.button>
               </form>
             </motion.div>
