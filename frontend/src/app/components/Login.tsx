@@ -12,7 +12,7 @@ export function Login() {
     
   const fetchDashboardData = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/dashboard/render", {
+      const res = await axios.get("https://replate-pycw.onrender.com/dashboard/render", {
         withCredentials: true,
       });
       const dashboardEmail = res.data?.email?.trim().toLowerCase();
@@ -27,7 +27,7 @@ export function Login() {
   const loginUser = async () => {
     try {
       const res = await axios.post(
-        "http://localhost:8000/user/login",
+        "https://replate-pycw.onrender.com/user/login",
         {
           email: email.trim().toLowerCase(),
           password

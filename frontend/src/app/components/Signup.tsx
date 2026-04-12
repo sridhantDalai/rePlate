@@ -13,7 +13,7 @@ export function Signup() {
   });
   const signupUser = async () => {
     try {
-      const res = await axios.post("http://localhost:8000/user/signup", {
+      const res = await axios.post("https://replate-pycw.onrender.com/user/signup", {
         username: formData.name,
         email: formData.email,
         password: formData.password,

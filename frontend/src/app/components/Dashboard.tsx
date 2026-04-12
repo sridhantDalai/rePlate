@@ -107,7 +107,7 @@ export function Dashboard() {
         setIsLoading(true);
         setError("");
 
-        const res = await fetch(`http://localhost:8000/postFood/email/${email}`);
+        const res = await fetch(`https://replate-pycw.onrender.com/postFood/email/${email}`);
 const data = await res.json();
 
 // 🔥 direct use
@@ -135,7 +135,7 @@ setUserPosts((data.data || data).map(mapApiFoodPost));
 
       try {
         console.log("Deleting post with ID:", postid);
-        const res = await fetch(`http://localhost:8000/dashboard/del/${postid}`, {
+        const res = await fetch(`https://replate-pycw.onrender.com/dashboard/del/${postid}`, {
           method: "DELETE",
         });
         const data = await res.json();

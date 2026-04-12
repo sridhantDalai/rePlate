@@ -111,7 +111,7 @@ export function AddFoodModal({ isOpen, onClose, onSubmit }: AddFoodModalProps) {
       fd.append("isAcidic", String(formData.acidic));
       fd.append("imgFood", formData.image);
 
-      const res = await fetch("http://localhost:8000/postFood/res", {
+      const res = await fetch("https://replate-pycw.onrender.com/postFood/res", {
         method: "POST",
         body: fd,
       });

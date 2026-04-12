@@ -69,7 +69,7 @@ export function ProductShowcase() {
       setIsLoading(true);
       setError("");
 
-      const res = await fetch("http://localhost:8000/postFood/all");
+      const res = await fetch("https://replate-pycw.onrender.com/postFood/all");
       const data = await res.json();
 
       if (!res.ok || !data.success || !Array.isArray(data.data)) {
