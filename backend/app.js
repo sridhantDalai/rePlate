@@ -13,7 +13,7 @@ const authMiddleware = require('./middleware/auth.middleware.js');
 
 const app = express();
 app.use(cors({
-  origin: "https://re-plate-git-main-sridhant-dalais-projects.vercel.app",
+  origin: "https://re-plate-nu.vercel.app",
   credentials: true
 }));
 
