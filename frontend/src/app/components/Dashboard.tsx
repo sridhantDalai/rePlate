@@ -107,7 +107,7 @@ export function Dashboard() {
         setIsLoading(true);
         setError("");
 
-        const res = await fetch(`https://replate-pycw.onrender.com/postFood/email/${email}`);
+        const res = await fetch(`https://replate-pycw.onrender.com/postFood/email/${encodeURIComponent(email)}`);
 const data = await res.json();
 
 // 🔥 direct use
