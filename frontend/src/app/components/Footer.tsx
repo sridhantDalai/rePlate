@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { Heart, Mail, Linkedin, Github, UtensilsCrossed } from "lucide-react";
+import { Heart, Mail, Linkedin, Github, Instagram, UtensilsCrossed } from "lucide-react";
 
 const teamMembers = [
   {
@@ -8,21 +8,26 @@ const teamMembers = [
     image: "https://res.cloudinary.com/dbjtjvfxd/image/upload/v1775976953/WhatsApp_Image_2026-04-12_at_12.22.56_xjurqn.jpg",
     linkedin: "https://www.linkedin.com/in/sridhant-dalai-44738a376",
     github: "https://github.com/sridhantDalai/",
+    instagram: "https://www.instagram.com/sridhant_07z/",
     email: "sridhantrahul14@gmail.com"
   },
   {
     name: "Arup Shee",
     role: "UI/UX Designer",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=faces",
-    linkedin: "#",
-    github: "#",
+    image: "https://res.cloudinary.com/dbjtjvfxd/image/upload/v1775987655/Screenshot_2026-04-12_152238_llgzhn.png",
+    linkedin: "https://www.linkedin.com/in/arup-shee-4b535b214/",
+    github: "https://github.com/Arupshee007",
+    email : "arupshee007@gmail.com",
+    instagram: "https://www.instagram.com/arupshee007/?hl=en",
   },
   {
     name: "Nikhil Kumar",
     role: "Backend Developer",
-    image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop&crop=faces",
-    linkedin: "#",
-    github: "#",
+    image: "https://res.cloudinary.com/dbjtjvfxd/image/upload/v1775987643/WhatsApp_Image_2026-04-12_at_13.58.30_r0bbw4.jpg",
+    linkedin: "https://www.linkedin.com/in/nikhil-kumar-01868038a",
+    github: "https://github.com/nikhilll1907-source",
+    email : "nikhilll1907@gmail.com",
+    instagram: "https://www.instagram.com/it_nikhill/",
   },
 ];
 
@@ -123,6 +128,14 @@ export function Footer() {
                     className="w-10 h-10 rounded-xl backdrop-blur-md bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-colors"
                   >
                     <Github className="w-5 h-5" strokeWidth={2} />
+                  </motion.a>
+                  <motion.a
+                    whileHover={{ scale: 1.1, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                    href={member.instagram}
+                    className="w-10 h-10 rounded-xl backdrop-blur-md bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-colors"
+                  >
+                    <Instagram className="w-5 h-5" strokeWidth={2} />
                   </motion.a>
                   <motion.a
                     whileHover={{ scale: 1.1, y: -3 }}
