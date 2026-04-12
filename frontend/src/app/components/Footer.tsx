@@ -3,14 +3,15 @@ import { Heart, Mail, Linkedin, Github, UtensilsCrossed } from "lucide-react";
 
 const teamMembers = [
   {
-    name: "Arup Shee",
+    name: "Sridhant Dalai",
     role: "Full Stack Developer",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=faces",
-    linkedin: "#",
-    github: "#",
+    image: "https://res.cloudinary.com/dbjtjvfxd/image/upload/v1775976953/WhatsApp_Image_2026-04-12_at_12.22.56_xjurqn.jpg",
+    linkedin: "https://www.linkedin.com/in/sridhant-dalai-44738a376",
+    github: "https://github.com/sridhantDalai/",
+    email: "sridhantrahul14@gmail.com"
   },
   {
-    name: "Sridhant Dalai",
+    name: "Arup Shee",
     role: "UI/UX Designer",
     image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=faces",
     linkedin: "#",
@@ -126,7 +127,7 @@ export function Footer() {
                   <motion.a
                     whileHover={{ scale: 1.1, y: -3 }}
                     whileTap={{ scale: 0.95 }}
-                    href={`mailto:${member.name.toLowerCase().replace(' ', '.')}@replate.com`}
+                    href={`mailto:${member.email}`}
                     className="w-10 h-10 rounded-xl backdrop-blur-md bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-colors"
                   >
                     <Mail className="w-5 h-5" strokeWidth={2} />

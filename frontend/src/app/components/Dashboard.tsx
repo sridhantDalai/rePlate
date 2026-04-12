@@ -32,7 +32,7 @@ type FoodPost = {
   sealed: boolean;
 };
 
-const defaultAvatarUrl = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=faces";
+const defaultAvatarUrl = "https://res.cloudinary.com/dbjtjvfxd/image/upload/v1775977793/cute-astronaut-with-taco-soda-cartoon-illustration-science-food-drink-concept-flat-cartoon-style_138676-2009_vht8lz.avif";
 
 const formatExpiryLabel = (expiryDate: string) => {
   const date = new Date(expiryDate);
