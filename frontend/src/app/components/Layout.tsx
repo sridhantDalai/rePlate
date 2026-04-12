@@ -149,7 +149,7 @@ export function Layout() {
                     whileHover={{ scale: 1.05, boxShadow: "0 8px 30px rgba(16, 185, 129, 0.3)" }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleLogout}
-                    className="px-5 py-2 rounded-xl font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 transition-shadow"
+                    className="px-5 py-2 rounded-xl font-bold bg-red-500 from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 transition-shadow"
                   >
                     Logout
                   </motion.button>

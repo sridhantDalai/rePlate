@@ -20,7 +20,7 @@ app.use(cors({
 // THEN others
 app.use(cookieParser());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({extended: true }));
 // connect database
 const connectDB=require('./db.js')
 connectDB();
